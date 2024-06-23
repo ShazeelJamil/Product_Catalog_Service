@@ -1,57 +1,90 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ProductDTO } from '../DTOs';
-
-const products: ProductDTO[] = [
-    new ProductDTO({ name: 'Product1', description: 'Description1', category: 'Category1', inStocks: 10, price: 100 }),
-    new ProductDTO({ name: 'Product2 Special', description: 'Description2', category: 'Category2', inStocks: 20, price: 200 }),
-    new ProductDTO({ name: 'Special Product3', description: 'Description3', category: 'Category3', inStocks: 30, price: 300 }),
-    new ProductDTO({ name: 'Another Special Product4', description: 'Description4', category: 'Category4', inStocks: 40, price: 400 }),
-    new ProductDTO({ name: 'Product5', description: 'Description5', category: 'Category5', inStocks: 50, price: 500 }),
-];
-
+import { PRODUCT_DOCUMENT, SCHEMA_NAME } from '../product-schema/product.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class ProductService {
+    constructor(@InjectModel(SCHEMA_NAME) private readonly productDBHandler: Model<PRODUCT_DOCUMENT>) { }
 
-    addProduct(productData: Partial<ProductDTO>): ProductDTO {
-        const newProduct = new ProductDTO(productData);
-        products.push(newProduct);
-        return newProduct;
-    }
-
-    getAllProducts(): ProductDTO[] {
-        return products;
-    }
-
-    getProductById(id: string): ProductDTO {
-        const product = products.find(product => product.id === id);
-        if (!product) {
-            throw new NotFoundException(`Product not found`);
+    async addProduct(productData: Partial<ProductDTO>): Promise<ProductDTO> {
+        try {
+            const productwithId = new ProductDTO(productData)//this lets the object to populate id (uuid4)
+            const product = new this.productDBHandler(productwithId);
+            const createdProduct = await product.save();
+            return createdProduct;
+        } catch (error) {
+            throw new HttpException('Failed to add product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return product;
     }
 
-    getProductByName(name: string): ProductDTO[] {
-        const regex = new RegExp(`\\b${name}\\b`, 'i'); // Regex to match whole words, case-insensitive
-        const filteredProducts = products.filter(product => regex.test(product.name));
-        if (filteredProducts.length === 0) {
-            throw new NotFoundException(`No products found containing the name "${name}"`);
+    async getAllProducts(): Promise<ProductDTO[]> {
+        try {
+            return await this.productDBHandler.find({});
+        } catch (error) {
+            throw new HttpException('Failed to fetch products', HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return filteredProducts;
     }
 
-    deleteProduct(id: string): boolean {
-        const index = products.findIndex(product => product.id === id);
-        if (index === -1) {
-            throw new NotFoundException(`Product with ID ${id} not found`);
+    async getProductById(id: string): Promise<ProductDTO> {
+        try {
+            const product = await this.productDBHandler.findOne({ id }).exec();
+            if (!product) {
+                throw new NotFoundException(`Product with ID ${id} not found`);
+            }
+            return product;
+        } catch (error) {
+            throw new HttpException('Failed to fetch product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        products.splice(index, 1);
-        return true;
     }
 
-    updateProduct(updatedProduct: ProductDTO): ProductDTO {
-        const existingProduct = this.getProductById(updatedProduct.id);
-        Object.assign(existingProduct, updatedProduct);
-        return existingProduct;
+    async getProductByName(name: string): Promise<ProductDTO[]> {
+        try {
+            const regex = new RegExp(`\\b${name}\\b`, 'i'); // Regex to match whole words, case-insensitive
+            const products = await this.productDBHandler.find({ name: { $regex: regex } }).exec();
+            if (products.length === 0) {
+                throw new NotFoundException(`No products found containing the name "${name}"`);
+            }
+            return products;
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new HttpException('Failed to fetch products by name', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
+    async deleteProduct(id: string): Promise<boolean> {
+        try {
+            const result = await this.productDBHandler.deleteOne({ id }).exec();
+            if (result.deletedCount === 0) {
+                throw new NotFoundException(`Product not found`);
+            }
+            return true;
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new HttpException('Failed to delete product', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async updateProduct(updatedProduct: ProductDTO): Promise<ProductDTO> {
+        try {
+            const existingProduct = await this.productDBHandler.findOne({ id: updatedProduct.id }).exec();
+            if (!existingProduct) {
+                throw new NotFoundException(`Product not found`);
+            }
+            Object.assign(existingProduct, updatedProduct);
+            await existingProduct.save();
+            return existingProduct;
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new HttpException('Failed to update product', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

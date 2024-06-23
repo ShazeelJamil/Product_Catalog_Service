@@ -11,14 +11,12 @@ export enum Category {
     Other = 'Other'
 }
 
-
 export class ProductDTO {
     @IsString()
     id: string;
 
     @IsString()
-    @IsNotEmpty()
-    
+    @IsNotEmpty()    
     name: string;
 
     @IsString()

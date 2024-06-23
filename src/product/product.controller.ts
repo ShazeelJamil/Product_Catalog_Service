@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, NotFoundException, BadRequestException, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, NotFoundException, BadRequestException, UsePipes, ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { ProductDTO } from "./DTOs";
 import { ProductService } from "./services/product.services";
 import { validate as uuidValidate, version as uuidVersion } from 'uuid';
@@ -8,16 +8,27 @@ export class ProductController {
     constructor(private readonly productService: ProductService) { }
 
     @Get('/')
-    getAllProducts() {
-        const products = this.productService.getAllProducts();
-        return products;
+    async getAllProducts() {
+        try {
+            const products = await this.productService.getAllProducts();
+            return products;
+        } catch (error) {
+            throw new HttpException('Failed to fetch products', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Post('/addProduct')
     @UsePipes(ValidationPipe)
-    addProduct(@Body() productData: ProductDTO) {
-        const newProduct = this.productService.addProduct(productData);
-        return { message: "Product Added", product: newProduct };
+    async addProduct(@Body() productData: ProductDTO) {
+        try {
+            const newProduct = await this.productService.addProduct(productData);
+            return { message: "Product Added", product: newProduct };
+        } catch (error) {
+            if (error instanceof BadRequestException) {
+                throw new BadRequestException(error.message);
+            }
+            throw new HttpException('Failed to add product', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Get('/getProductByName/:name')
@@ -46,38 +57,39 @@ export class ProductController {
 
     @Put('/updateProduct')
     @UsePipes(ValidationPipe)
-    updateProduct(@Body() product: ProductDTO) {
+    async updateProduct(@Body() product: ProductDTO) {
         if (!product || !product.id) {
             throw new BadRequestException('Product ID is required');
         }
-
         if (!uuidValidate(product.id) || uuidVersion(product.id) !== 4) {
             throw new BadRequestException('Invalid UUID');
         }
 
         try {
-            const updatedProduct = this.productService.updateProduct(product);
-            return { message: "Product Updated", product: updatedProduct };
+            const updatedProduct = await this.productService.updateProduct(product);
+            return { message: 'Product Updated', product: updatedProduct };
         } catch (error) {
-            throw new NotFoundException(error.message);
+            if (error instanceof NotFoundException) {
+                throw new NotFoundException(error.message);
+            }
+            throw new HttpException('Failed to update product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Delete('/deleteProduct/:id')
-    deleteProductById(@Param('id') id: string) {
-        if (!id) {
-            throw new BadRequestException('Product ID is required');
-        }
-
+    async deleteProductById(@Param('id') id: string) {
         if (!uuidValidate(id) || uuidVersion(id) !== 4) {
-            throw new BadRequestException('Invalid UUID version 4');
+            throw new BadRequestException('Invalid UUID');
         }
 
         try {
-            this.productService.deleteProduct(id);
-            return { message: "Product Deleted" };
+            await this.productService.deleteProduct(id);
+            return { message: 'Product Deleted' };
         } catch (error) {
-            throw new NotFoundException(error.message);
+            if (error instanceof NotFoundException) {
+                throw new NotFoundException(error.message);
+            }
+            throw new HttpException('Failed to delete product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
