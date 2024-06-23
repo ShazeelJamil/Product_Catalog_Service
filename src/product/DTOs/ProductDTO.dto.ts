@@ -19,7 +19,6 @@ export class ProductDTO {
     @IsNotEmpty()    
     name: string;
 
-    @IsString()
     @IsOptional()
     description: string;
 

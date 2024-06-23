@@ -8,6 +8,14 @@ import { Model } from 'mongoose';
 export class ProductService {
     constructor(@InjectModel(SCHEMA_NAME) private readonly productDBHandler: Model<PRODUCT_DOCUMENT>) { }
 
+    async getAllProducts(): Promise<ProductDTO[]> {
+        try {
+            return await this.productDBHandler.find({});
+        } catch (error) {
+            throw new HttpException('Failed to fetch products', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     async addProduct(productData: Partial<ProductDTO>): Promise<ProductDTO> {
         try {
             const productwithId = new ProductDTO(productData)//this lets the object to populate id (uuid4)
@@ -19,13 +27,6 @@ export class ProductService {
         }
     }
 
-    async getAllProducts(): Promise<ProductDTO[]> {
-        try {
-            return await this.productDBHandler.find({});
-        } catch (error) {
-            throw new HttpException('Failed to fetch products', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 
     async getProductById(id: string): Promise<ProductDTO> {
         try {
@@ -35,6 +36,9 @@ export class ProductService {
             }
             return product;
         } catch (error) {
+            if (error instanceof NotFoundException){
+                throw error;
+            }
             throw new HttpException('Failed to fetch product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
