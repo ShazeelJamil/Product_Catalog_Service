@@ -16,10 +16,11 @@ export class ProductDTO {
     id: string;
 
     @IsString()
-    @IsNotEmpty()    
+    @IsNotEmpty()
     name: string;
 
     @IsOptional()
+    @IsString()
     description: string;
 
     @IsIn(Object.keys(ProductCategory))
@@ -39,7 +40,7 @@ export class ProductDTO {
     constructor(partial: Partial<ProductDTO> = {}) {
         this.id = uuidv4();
         this.name = partial.name || '';
-        this.description = partial.description || '';
+        this.description = partial.description || 'None';
         this.category = partial.category || Category.Other;
         this.inStocks = partial.inStocks || 0;
         this.price = partial.price || 0;

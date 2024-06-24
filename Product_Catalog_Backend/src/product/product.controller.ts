@@ -87,7 +87,7 @@ export class ProductController {
         if (!uuidValidate(product.id) || uuidVersion(product.id) !== 4) {
             throw new BadRequestException('Invalid UUID');
         }
-
+        
         try {
             const updatedProduct = await this.productService.updateProduct(product);
             return { message: 'Product Updated', product: updatedProduct };
