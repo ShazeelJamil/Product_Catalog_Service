@@ -1,0 +1,50 @@
+﻿@page "/"
+
+<PageTitle>All Products</PageTitle>
+<div class="container mt-4">
+    <h1 class="text-center mb-4">All Products</h1>
+
+    @if (_productDataHolderService.Products.Count < 1)
+    {
+        <h3 class="text-center">No Products to Show</h3>
+    }
+    else
+    {
+        <div class="search-bar mb-4">
+            <input type="text" class="form-control" @bind-value="@queryString" placeholder="Search Product..." />
+            <button class="btn btn-secondary ml-2" @onclick="SearchProducts">Search</button>
+            @if (isSearchStarted)
+            {
+                <span class="clear-search ml-2" @onclick="ClearSearch">Clear Search</span>
+            }
+        </div>
+
+        <p class="text-center">Total Products: @(!isSearchStarted ? _productDataHolderService.Products.Count : searchResults.Count)</p>
+
+        <div class="product-list">
+            @foreach (var product in (!isSearchStarted ? _productDataHolderService.Products : searchResults))
+            {
+                <div class="product-item">
+                    <div class="product-details">
+                        <h4>@product.Name</h4>
+                        <p>@product.Description</p>
+                        <div class="d-flex justify-content-between flex-row" >
+                            <p><strong>Price:</strong> @product.Price.ToString("C")</p>
+                            <p><strong>In Stock:</strong> @product.InStocks</p>
+                        </div>
+                        <p><strong>Category:</strong> @product.Category</p>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn btn-danger" @onclick="() => deleteProduct(product.Id)">Delete</button>
+                        <button class="btn btn-primary" @onclick="() => editProduct(product.Id)">Edit</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-4">@errorMessage</div>
+        }
+    }
+</div>

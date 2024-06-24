@@ -1,0 +1,53 @@
+﻿@page "/addProduct/{productId?}"
+@page "/addProduct"
+@using Product_Catalog_Frontend.Shared.Models
+<PageTitle>@Title</PageTitle>
+
+    <h1>@Title</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red">@errorMessage</p>
+}
+
+<EditForm Model="@product" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="form-group">
+        <label for="name">Name</label>
+        <InputText id="name" class="form-control" @bind-Value="product.Name" />
+        <ValidationMessage For="@(() => product.Name)" />
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <InputTextArea id="description" class="form-control" @bind-Value="product.Description" />
+        <ValidationMessage For="@(() => product.Description)" />
+    </div>
+
+    <div class="form-group">
+        <label for="category">Category</label>
+        <InputSelect id="category" class="form-control" @bind-Value="product.Category">
+            @foreach (Category category in Enum.GetValues(typeof(Category)))
+            {
+                <option value="@category">@category</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => product.Category)" />
+    </div>
+
+    <div class="form-group">
+        <label for="inStocks">In Stocks</label>
+        <InputNumber id="inStocks" class="form-control" @bind-Value="product.InStocks" />
+        <ValidationMessage For="@(() => product.InStocks)" />
+    </div>
+
+    <div class="form-group">
+        <label for="price">Price</label>
+        <InputNumber id="price" class="form-control" @bind-Value="product.Price" />
+        <ValidationMessage For="@(() => product.Price)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+</EditForm>
