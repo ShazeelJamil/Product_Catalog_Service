@@ -47,6 +47,7 @@ namespace Product_Catalog_Frontend.Services
                     var jsonResponse = await response.Content.ReadAsStringAsync();
                     using (JsonDocument doc = JsonDocument.Parse(jsonResponse))
                     {
+                        //extracting the productDTO and message
                         JsonElement root = doc.RootElement;
                         string message = root.GetProperty("message").GetString();
                         ProductDTO newProduct = JsonSerializer.Deserialize<ProductDTO>(root.GetProperty("product").GetRawText());
@@ -89,7 +90,6 @@ namespace Product_Catalog_Frontend.Services
             }
         }
 
-
         public async Task<(bool, string)> DeleteProduct(string productId)
         {
             try
@@ -125,7 +125,7 @@ namespace Product_Catalog_Frontend.Services
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    return (null, $"Error: {response.StatusCode}, Details: {errorContent}");
+                    return (null, errorContent);
                 }
             }
             catch (Exception ex)

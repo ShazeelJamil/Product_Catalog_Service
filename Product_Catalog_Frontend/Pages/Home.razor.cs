@@ -12,7 +12,6 @@ namespace Product_Catalog_Frontend.Pages
         private NavigationManager _navigationManager { get; set; }
         [Inject]
         private ProductDataHolderService _productDataHolderService { get; set; }
-        public bool isLoading { get; set; }
         public bool isSearchStarted { get; set; } = false;
         public string errorMessage { get; set; }
         public string queryString { get; set; }
@@ -21,11 +20,10 @@ namespace Product_Catalog_Frontend.Pages
 
         protected override async Task<Task> OnInitializedAsync()
         {
-            isLoading = true;
+            //Load All The products from db on render
             var result = await _productApiService.GetAllProducts();
             _productDataHolderService.Products = result.Item1;
             errorMessage = result.Item2;
-            isLoading = true;
             return base.OnInitializedAsync();
         }
 
@@ -38,6 +36,7 @@ namespace Product_Catalog_Frontend.Pages
                 {
                     searchResults.RemoveAll(p => p.Id == productId);
                 }
+                //remove from visible list
                 _productDataHolderService.Products.RemoveAll(p => p.Id == productId);
                 StateHasChanged();
 
@@ -49,6 +48,7 @@ namespace Product_Catalog_Frontend.Pages
         }
         public void editProduct(string id)
         {
+            //redirects to edit mode and product loaded by id from by
             _navigationManager.NavigateTo($"/addProduct/{id}");
         }
 

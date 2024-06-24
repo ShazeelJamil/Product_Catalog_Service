@@ -25,7 +25,7 @@ namespace Product_Catalog_Frontend.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            if (!string.IsNullOrEmpty(productId))
+            if (!string.IsNullOrEmpty(productId))//f the id is passed via routing parameter then load the prododuct from db
             {
                 Title = "Edit Product";
                 var result = await _productApiService.GetProductById(productId);
@@ -57,6 +57,7 @@ namespace Product_Catalog_Frontend.Pages
                 }
                 if (!string.IsNullOrEmpty(productId))
                 {
+                    // In case when product is Updated/Edited
                     var (updatedProduct, message) = await _productApiService.UpdateProduct(product);
                     if (updatedProduct == null)
                     {
@@ -79,6 +80,7 @@ namespace Product_Catalog_Frontend.Pages
                 }
                 else
                 {
+                    // In case when product is Added
                     var (newProduct, message) = await _productApiService.AddProduct(product);
                     if (newProduct == null)
                     {
